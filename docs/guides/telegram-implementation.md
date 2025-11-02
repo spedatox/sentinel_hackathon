@@ -1,30 +1,29 @@
-# ✅ Telegram Integration Complete!
+# ✅ Telegram Integration - Notification System
 
 ## What's Been Implemented
 
-### 1. **Enhanced Telegram Library** (`src/lib/telegram.ts`)
+### 1. **Telegram Notification Library** (`src/lib/telegram.ts`)
 - ✅ `TELEGRAM_CHAT_ID` support for default recipient
 - ✅ `isTelegramConfigured()` - Check if bot is ready
-- ✅ `notifyTelegramRisk()` - Rich risk notifications with inline buttons
+- ✅ `notifyTelegramRisk()` - Rich risk notifications with informational buttons
 - ✅ `notifyTransactionComplete()` - Post-transaction confirmation
 - ✅ Formatted messages with Markdown
 - ✅ Multi-row button layouts
 
-### 2. **Enhanced Guardian API** (`src/app/api/guardian/prepare/route.ts`)
-- ✅ Automatic Telegram notification on high-risk transactions
+### 2. **Guardian API Integration** (`src/app/api/guardian/prepare/route.ts`)
+- ✅ Automatic Telegram notification on medium/high-risk transactions
 - ✅ Converts risk factors to human-readable descriptions
 - ✅ Sends formatted alert with transaction details
-- ✅ Includes all action buttons (Details, Probe, Lock, Approve, Mark Safe)
+- ✅ Includes informational action buttons (Details, Probe, Lock, Mark Safe)
 
-### 3. **Enhanced Webhook Handler** (`src/app/api/telegram/webhook/route.ts`)
-- ✅ `APPROVE` - Cosigns and submits transaction
+### 3. **Webhook Handler** (`src/app/api/telegram/webhook/route.ts`)
 - ✅ `DETAILS` - Shows transaction details
 - ✅ `PROBE` - Simulates test transfer
 - ✅ `LOCK1H` - Locks account for 1 hour
 - ✅ `MARKSAFE` - Adds recipient to allowlist
-- ✅ `CONFIRM_YES` - Learns behavior, marks legitimate
-- ✅ `CONFIRM_NO` - Locks account for 24 hours
 - ✅ Formatted response messages
+
+**Note:** Transactions are automatically processed by the app after TOTP verification. Telegram serves as a **notification and monitoring tool** - not for approval workflows.
 
 ### 4. **Test Endpoint** (`src/app/api/telegram/test/route.ts`)
 - ✅ GET endpoint to send test notification
@@ -85,30 +84,33 @@
 
 ## 📱 Message Types
 
-### 1. Pre-Transaction Alert (High Risk)
+### 1. Risk Alert Notification (Medium/High Risk)
 ```
 ⚠️ Sentinel Security Alert
 
-Transaction requires approval:
+Transaction detected and being processed:
 • From: GDSR...
 • To: GBBU...
 • Amount: 5000 USDC
 • Time: 2025-11-02 15:30 UTC
 • Risk: High (score 0.75)
 
-Reasons:
+Risk Factors:
 ✗ New recipient address
 ✗ Amount 4.1× above normal
 ✗ Transaction at 03:00 (outside typical 09:00-17:00)
 
+🔐 Guardian multisig required
+
 Queue ID: pending-abc123
 
-[ℹ️ Details] [🔍 Probe] [🔒 Lock 1h]
-[✅ Approve] [✓ Mark Safe]
+[ℹ️ Details] [🔍 Probe]
+[🔒 Lock 1h] [✓ Mark Safe]
 ```
 
-**Triggers:** Risk score ≥ 0.6  
-**Purpose:** Guardian approval before submission
+**Triggers:** Risk score ≥ 0.2 (medium or high)  
+**Purpose:** Real-time security monitoring and informational actions  
+**Flow:** User completes TOTP verification in the app → Transaction is automatically processed → Telegram receives notification
 
 ### 2. Post-Transaction Confirmation
 ```
@@ -119,34 +121,26 @@ To: GBBU...
 Amount: 5000 USDC
 Hash: 9a8f7d6e...
 
-Was this transaction legitimate?
-
-[✅ Yes, it was me] [❌ No, freeze my account]
+Transaction has been successfully processed.
 ```
 
 **Triggers:** After successful transaction  
-**Purpose:** Behavior learning loop
+**Purpose:** Transaction confirmation and audit trail
 
 ---
 
 ## 🔘 Button Actions
 
-### Pre-Transaction Buttons
+### Informational Buttons (Available in Risk Alerts)
 
 | Button | Action | What Happens |
 |--------|--------|--------------|
 | **ℹ️ Details** | `DETAILS:{queueId}` | Shows unsigned XDR and transaction details |
 | **🔍 Probe** | `PROBE:{queueId}` | Simulates 1 USDC test payment (no real funds) |
 | **🔒 Lock 1h** | `LOCK1H:{account}` | Blocks all transactions for 1 hour |
-| **✅ Approve** | `APPROVE:{queueId}` | Cosigns transaction and submits to Stellar |
-| **✓ Mark Safe** | `MARKSAFE:{recipient}` | Adds recipient to allowlist |
+| **✓ Mark Safe** | `MARKSAFE:{recipient}` | Adds recipient to allowlist for future transactions |
 
-### Post-Transaction Buttons
-
-| Button | Action | What Happens |
-|--------|--------|--------------|
-| **✅ Yes, it was me** | `CONFIRM_YES:{recipient}` | Adds to allowlist, updates behavior profile |
-| **❌ No, freeze** | `CONFIRM_NO:{account}` | Locks account for 24 hours, flags as fraud |
+**Note:** These are informational and administrative actions. Transaction approval happens automatically in the app after TOTP verification.
 
 ---
 
@@ -165,30 +159,26 @@ Was this transaction legitimate?
    - User enters TOTP code (or demo code 123123)
    - Verification succeeds
 
-4. **Guardian Queue**
+4. **Guardian Processing**
    - `POST /api/guardian/prepare` creates unsigned XDR
    - Stores in queue with ID: `pending-abc123`
+   - Automatically calls guardian cosigner
 
-5. **Telegram Notification** ⭐ NEW
+5. **Telegram Notification** 📲
    - `notifyTelegramRisk()` sends formatted alert
    - Includes all transaction details
-   - Shows inline buttons
+   - Shows informational buttons (Details, Probe, Lock, Mark Safe)
+   - **Note:** This is a notification - transaction is already being processed
 
-6. **Guardian Approval**
-   - Guardian clicks "✅ Approve" in Telegram
-   - `POST /api/telegram/webhook` receives callback
-   - `APPROVE:pending-abc123` action triggers
-   - Transaction cosigned and submitted
+6. **Transaction Completion**
+   - Backend requests guardian multisig cosigning
+   - User signs in their wallet
+   - Transaction submitted to Stellar network
 
-7. **Confirmation** ⭐ NEW
+7. **Post-Transaction Notification** 📲
    - After successful submission, Telegram sends:
-   - "Was this transaction legitimate?"
-   - User clicks "✅ Yes, it was me"
-
-8. **Learning** ⭐ NEW
-   - Recipient added to allowlist
-   - Future transactions to this address: lower risk
-   - Message updated: "✅ Confirmed Legitimate"
+   - Confirmation message with transaction hash
+   - Audit trail for security monitoring
 
 ---
 
@@ -202,28 +192,30 @@ Was this transaction legitimate?
 - [ ] Visit /api/telegram/test
 - [ ] Receive test message ✅
 
-### High-Risk Transaction
+### Medium/High-Risk Transaction Flow
 - [ ] Connect wallet
 - [ ] Enable TOTP
 - [ ] Send large amount to new address
-- [ ] Receive Telegram alert
-- [ ] See inline buttons
+- [ ] Complete TOTP verification in app
+- [ ] Transaction processes automatically
+- [ ] Receive Telegram notification with risk details
+- [ ] See informational buttons (Details, Probe, Lock, Mark Safe)
 
-### Button Interactions (Requires Webhook)
+### Button Interactions (Optional - Requires Webhook)
 - [ ] Setup ngrok or deploy to Vercel
-- [ ] Register webhook URL
-- [ ] Trigger high-risk transaction
-- [ ] Click "✅ Approve" in Telegram
-- [ ] Transaction submits successfully
-- [ ] Receive confirmation message
-
-### Post-Transaction Learning
-- [ ] Complete transaction
-- [ ] Receive "Was this you?" message
-- [ ] Click "✅ Yes, it was me"
-- [ ] Verify recipient added to allowlist
+- [ ] Register webhook URL with Telegram
+- [ ] Trigger medium/high-risk transaction
+- [ ] Receive notification in Telegram
+- [ ] Click "ℹ️ Details" to view transaction XDR
+- [ ] Click "✓ Mark Safe" to add recipient to allowlist
 - [ ] Send to same recipient again
-- [ ] Verify lower risk score
+- [ ] Verify lower risk score due to allowlist
+
+### Post-Transaction Notification
+- [ ] Complete any transaction
+- [ ] Receive confirmation message in Telegram
+- [ ] Verify transaction hash is included
+- [ ] Check message contains all transaction details
 
 ---
 
@@ -233,14 +225,13 @@ Was this transaction legitimate?
 # Required for notifications
 TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=123456789
-
-# Optional for button interactions
-TELEGRAM_WEBHOOK_URL=https://your-domain.com
 ```
 
 ---
 
-## 🌐 Webhook Setup (Optional)
+## 🌐 Webhook Setup (Optional - For Button Interactions)
+
+Webhook setup is **optional** and only needed if you want to use informational buttons (Details, Probe, Lock, Mark Safe). The core transaction flow works without webhooks.
 
 ### Local Testing with ngrok
 ```bash
@@ -251,7 +242,7 @@ npm run dev
 npx ngrok http 3000
 # Copy HTTPS URL: https://abc123.ngrok.io
 
-# Add to .env.local
+# Add to .env.local (optional)
 TELEGRAM_WEBHOOK_URL=https://abc123.ngrok.io
 
 # Register webhook

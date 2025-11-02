@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import {
   answerCallbackQuery,
-  editAlertMessage,
   sendFollowUpMessage,
 } from '@/lib/telegram';
 import {
   getPendingTx,
-  markPendingTxApproved,
-  deletePendingTx,
   addAllowlistedRecipient,
 } from '@/lib/storage';
-import { requestGuardianCosign } from '@/lib/guardian';
 
 interface TelegramUser {
   id: number;
@@ -33,84 +29,6 @@ interface TelegramCallbackQuery {
 interface TelegramUpdate {
   update_id: number;
   callback_query?: TelegramCallbackQuery;
-}
-
-async function handleApprove(shortOrFullId: string, callback: TelegramCallbackQuery) {
-  console.log('🔍 handleApprove called with ID:', shortOrFullId);
-  
-  // Try to find by full ID first, then by prefix
-  let pending = await getPendingTx(shortOrFullId);
-  console.log('📝 First lookup result:', pending ? 'Found' : 'Not found');
-  
-  // If not found and ID is short (8 chars), search by prefix
-  if (!pending && shortOrFullId.length === 8) {
-    // This is a simplified approach - in production you'd want a proper lookup table
-    // For now, we'll extract the full ID from the message text
-    const messageText = callback.message?.text || '';
-    console.log('📄 Message text length:', messageText.length);
-    // Try both with and without backticks
-    const queueIdMatch = messageText.match(/Queue ID: `?([a-f0-9-]+)`?/);
-    console.log('🎯 Regex match:', queueIdMatch ? queueIdMatch[1] : 'No match');
-    
-    if (queueIdMatch) {
-      const fullId = queueIdMatch[1];
-      console.log('🔎 Trying to find with full ID:', fullId);
-      pending = await getPendingTx(fullId);
-      console.log('📝 Second lookup result:', pending ? 'Found' : 'Not found');
-    }
-  }
-  
-  if (!pending) {
-    console.log('❌ Transaction not found, answering callback');
-    await answerCallbackQuery(callback.id, 'Transaction no longer pending', true);
-    return;
-  }
-  
-  console.log('✅ Transaction found:', pending.txId);
-  
-  const txId = pending.txId;
-  if (pending.status === 'expired') {
-    await answerCallbackQuery(callback.id, 'Transaction expired', true);
-    return;
-  }
-
-  try {
-    // Determine risk level from score
-    const riskLevel = !pending.riskScore ? 'medium' : 
-                      pending.riskScore >= 0.5 ? 'high' : 
-                      pending.riskScore >= 0.2 ? 'medium' : 'low';
-
-    const response = await requestGuardianCosign(txId, pending.unsignedXdr, riskLevel);
-    if (!response.success) {
-      throw new Error(response.error || 'Guardian signer rejected request');
-    }
-
-    await markPendingTxApproved(txId);
-    await answerCallbackQuery(callback.id, '✅ Approved!');
-
-    if (callback.message) {
-      await editAlertMessage(
-        callback.message.chat.id,
-        callback.message.message_id,
-  '✅ *Approved and Sent*\n\nTransaction is processing on the Stellar network. It will appear in your transaction history shortly.'
-      );
-    }
-
-    await deletePendingTx(txId);
-  } catch (error) {
-    console.error('Telegram approval error:', error);
-    const errorMsg = error instanceof Error ? error.message : 'Failed to approve transaction';
-    await answerCallbackQuery(callback.id, errorMsg, true);
-    
-    // Also update the message to show the error
-    if (callback.message) {
-      await editAlertMessage(
-        callback.message.chat.id,
-        callback.message.message_id,
-        `❌ *Approval Failed*\n\n${errorMsg}\n\nPlease try again or contact support if the issue persists.`
-      ).catch(err => console.error('Failed to edit message:', err));
-    }
-  }
 }
 
 async function handleDetails(shortOrFullId: string, callback: TelegramCallbackQuery) {
@@ -184,7 +102,6 @@ export async function POST(request: Request) {
 
   // Map shortened actions to full actions
   const actionMap: Record<string, string> = {
-    'A': 'APPROVE',
     'D': 'DETAILS',
     'P': 'PROBE',
     'L': 'LOCK1H',
@@ -194,9 +111,6 @@ export async function POST(request: Request) {
   const fullAction = actionMap[action] || action;
 
   switch (fullAction) {
-    case 'APPROVE':
-      await handleApprove(arg, callback);
-      break;
     case 'DETAILS':
       await handleDetails(arg, callback);
       break;

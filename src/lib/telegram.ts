@@ -194,7 +194,7 @@ Queue ID: \`${queueId}\``;
   });
 }
 
-// Post-transaction confirmation
+// Post-transaction confirmation (notification-only, no action buttons)
 export async function notifyTransactionComplete(params: {
   account: string;
   recipient: string;
@@ -211,7 +211,7 @@ export async function notifyTransactionComplete(params: {
   let aiMessage: string | null = null;
   try {
     const { generateTelegramAlert } = await import('@/lib/ai');
-    const prompt = `Generate a short post-transaction confirmation message (2-3 sentences). Transaction: ${amount} ${asset} sent to ${recipient.slice(0, 8)}... Ask if this was legitimate. Be concise and friendly.`;
+    const prompt = `Generate a short post-transaction confirmation message (2-3 sentences). Transaction: ${amount} ${asset} sent to ${recipient.slice(0, 8)}... Be concise and friendly.`;
     
     // Use the AI client directly for this simpler message
     const openaiClient = await import('openai').then(m => m.default);
@@ -254,22 +254,12 @@ To: \`${recipient.slice(0, 8)}...\`
 Amount: *${amount} ${asset}*
 Hash: \`${hash.slice(0, 12)}...\`
 
-*Was this transaction legitimate?*`;
+Transaction has been successfully processed.`;
   }
-
-  const buttons: TelegramButton[][] = [
-    [
-      { text: "✅ Yes, it was me", callback_data: `CONFIRM_YES:${recipient}` },
-      { text: "❌ No, freeze my account", callback_data: `CONFIRM_NO:${account}` }
-    ]
-  ];
 
   return telegramFetch("sendMessage", {
     chat_id: chatId,
     text: message,
     parse_mode: "Markdown",
-    reply_markup: {
-      inline_keyboard: buttons,
-    },
   });
 }

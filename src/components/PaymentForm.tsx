@@ -197,7 +197,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         message: "✅ TOTP verified. Processing transaction...",
       });
 
-      // Automatically approve and submit (Telegram is just for notifications)
+      // Automatically process transaction (Telegram is notification-only)
       const approveResponse = await fetch("/api/guardian/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,7 +266,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
     if (!pendingTx || !riskResult) return;
     setStepUpOpen(false);
 
-    // Both medium and high risk require Telegram guardian approval
+    // Medium and high risk require guardian processing (TOTP verified)
     if (riskResult.bucket === "medium" || riskResult.bucket === "high") {
       console.log('📤 Calling prepareGuardian for', riskResult.bucket, 'risk');
       await prepareGuardian(pendingTx);
