@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import { useLanguage } from "@/providers/LanguageProvider";
+
 export type RiskBucket = "low" | "medium" | "high";
 
 interface RiskBadgeProps {
@@ -9,14 +11,16 @@ interface RiskBadgeProps {
   className?: string;
 }
 
-const bucketConfig: Record<RiskBucket, { label: string; colors: string }> = {
-  low: { label: "Low Risk", colors: "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" },
-  medium: { label: "Medium Risk", colors: "bg-amber-500/15 text-amber-300 border-amber-400/40" },
-  high: { label: "High Risk", colors: "bg-rose-500/15 text-rose-300 border-rose-400/40" },
+const bucketConfig: Record<RiskBucket, { colors: string }> = {
+  low: { colors: "bg-emerald-500/15 text-emerald-300 border-emerald-400/40" },
+  medium: { colors: "bg-amber-500/15 text-amber-300 border-amber-400/40" },
+  high: { colors: "bg-rose-500/15 text-rose-300 border-rose-400/40" },
 };
 
 export function RiskBadge({ bucket, size = "md", onClick, className }: RiskBadgeProps) {
+  const { t } = useLanguage();
   const config = bucketConfig[bucket];
+  const label = bucket === "low" ? t.risk.low : bucket === "medium" ? t.risk.medium : t.risk.high;
   return (
     <button
       type="button"
@@ -32,7 +36,7 @@ export function RiskBadge({ bucket, size = "md", onClick, className }: RiskBadge
         .join(" ")}
     >
       <span className="h-2 w-2 rounded-full bg-current opacity-80" />
-      <span className="ml-2">{config.label}</span>
+      <span className="ml-2">{label}</span>
     </button>
   );
 }

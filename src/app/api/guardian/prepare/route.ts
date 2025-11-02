@@ -21,6 +21,7 @@ interface GuardianPrepareRequest {
   telegramChatId?: number | string;
   summaryOverride?: string;
   ttlSeconds?: number;
+  language?: 'en' | 'tr';
 }
 
 const DEFAULT_TTL = 15 * 60; // 15 minutes
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
           score: payload.score || 0.75,
           factors: factorsForAlert,
           queueId: entry.txId,
+          language: payload.language || 'en',
         });
       } catch (err) {
         console.error("[guardian] Failed to send Telegram alert", err);

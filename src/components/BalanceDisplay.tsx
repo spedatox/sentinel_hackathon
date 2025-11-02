@@ -5,6 +5,7 @@ import { FaCoins, FaSync } from "react-icons/fa";
 import { type StellarHelper, getStellarHelper } from "@/lib/stellar-helper";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 interface BalanceDisplayProps {
   publicKey: string;
@@ -17,6 +18,7 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -41,14 +43,14 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
       setErrorMessage(null);
     } catch (error) {
       console.error("Error fetching balance:", error);
-      let message = "Failed to load balance. Please try again.";
+      let message = t.balance.errorGeneric;
       const code = (error as { code?: string })?.code;
       const isAccountMissing =
         code === "ACCOUNT_NOT_FOUND" ||
         (error instanceof Error &&
           (error.message === "ACCOUNT_NOT_FOUND" || /404/.test(error.message)));
       if (isAccountMissing) {
-        message = "Account not found on Horizon. Fund your Testnet account, then refresh.";
+        message = t.balance.errorNotFound;
       }
       setErrorMessage(message);
     } finally {
@@ -91,8 +93,8 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
             <FaCoins />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-white">Account balance</h2>
-            <p className="text-sm text-white/60">Live data from Horizon Testnet</p>
+            <h2 className="text-2xl font-semibold text-white">{t.balance.title}</h2>
+            <p className="text-sm text-white/60">{t.balance.subtitle}</p>
           </div>
         </div>
         <Button
@@ -101,14 +103,14 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
           variant="secondary"
           leftIcon={<FaSync className={refreshing ? "animate-spin" : ""} />}
         >
-          Refresh
+          {refreshing ? t.balance.refreshing : t.balance.refresh}
         </Button>
       </div>
 
       <div className="rounded-3xl border border-amber-400/20 bg-gradient-to-br from-amber-500/15 to-amber-500/5 p-6">
-        <p className="text-xs uppercase tracking-wide text-white/50">Available</p>
+        <p className="text-xs uppercase tracking-wide text-white/50">{t.balance.available}</p>
         <p className="mt-3 text-5xl font-bold text-white">
-          {formatBalance(balance)} <span className="text-2xl text-white/60">XLM</span>
+          {formatBalance(balance)} <span className="text-2xl text-white/60">{t.balance.xlm}</span>
         </p>
       </div>
 
@@ -120,7 +122,7 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
 
       {assets.length > 0 && (
         <div className="mt-6 space-y-2">
-          <p className="text-sm font-semibold text-white/70">Other assets</p>
+          <p className="text-sm font-semibold text-white/70">{t.balance.otherAssets}</p>
           {assets.map((asset) => (
             <div
               key={`${asset.code}-${asset.issuer}`}
@@ -137,7 +139,7 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
       )}
 
       <p className="mt-6 text-xs text-white/50">
-        Tip: Stellar accounts require a minimum reserve, so keep at least 1 XLM to cover trustlines and offers.
+        {t.balance.tip}
       </p>
     </Card>
   );

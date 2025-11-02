@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   FiMenu,
@@ -10,20 +11,14 @@ import {
   FiHome,
   FiX,
 } from "react-icons/fi";
+import { useLanguage } from "@/providers/LanguageProvider";
+import { LanguageToggle } from "./LanguageToggle";
 
 type AppShellProps = {
   children: React.ReactNode;
   pageTitle: string;
   pageDescription?: string;
 };
-
-const NAV_ITEMS = [
-  {
-    href: "/",
-    label: "Overview",
-    icon: FiHome,
-  },
-];
 
 export default function AppShell({
   children,
@@ -32,6 +27,15 @@ export default function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const NAV_ITEMS = [
+    {
+      href: "/",
+      label: t.sidebar.overview,
+      icon: FiHome,
+    },
+  ];
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -46,20 +50,26 @@ export default function AppShell({
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-white/10 bg-slate-950/80 backdrop-blur-xl transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-white/10 bg-slate-950/95 backdrop-blur-xl transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-full flex-col gap-8 px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
-                Sentinel
-              </p>
-              <span className="mt-1 flex items-center gap-2 text-lg font-semibold text-white">
-                <FiShield className="text-cyan-300" />
-                Guardian Console
-              </span>
+        <div className="flex h-screen flex-col gap-6 px-6 py-6 overflow-y-auto">
+          <div className="flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <Image 
+                src="/sentinel-logo.png" 
+                alt="Sentinel Logo" 
+                width={48} 
+                height={48}
+                className="flex-shrink-0"
+              />
+              <div>
+                <span className="flex items-center gap-2 text-xl font-bold text-white">
+                  SENTINEL
+                </span>
+                <p className="text-xs text-cyan-300">{t.sidebar.subtitle}</p>
+              </div>
             </div>
             <button
               type="button"
@@ -71,7 +81,11 @@ export default function AppShell({
             </button>
           </div>
 
-          <nav className="space-y-1">
+          <div className="flex-shrink-0 w-fit">
+            <LanguageToggle />
+          </div>
+
+          <nav className="space-y-1 flex-shrink-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -94,7 +108,7 @@ export default function AppShell({
             })}
           </nav>
 
-          <div className="mt-auto border-t border-white/10 pt-6">
+          <div className="mt-auto border-t border-white/10 pt-6 flex-shrink-0">
             <Link
               href="/settings"
               onClick={closeSidebar}
@@ -105,14 +119,14 @@ export default function AppShell({
               }`}
             >
               <FiSettings className="h-4 w-4" />
-              Settings
+              {t.sidebar.settings}
             </Link>
           </div>
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 px-6 py-4 backdrop-blur-xl lg:px-10">
+      <div className="flex flex-1 flex-col lg:ml-72">
+        <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/95 px-6 py-3 backdrop-blur-xl lg:px-8">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -127,14 +141,14 @@ export default function AppShell({
                 {pageTitle}
               </h1>
               {pageDescription && (
-                <p className="text-sm text-white/60">{pageDescription}</p>
+                <p className="text-xs text-white/60 md:text-sm">{pageDescription}</p>
               )}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-8 lg:px-10 lg:py-10">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             {children}
           </div>
         </main>

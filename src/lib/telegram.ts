@@ -1,4 +1,6 @@
-﻿const TELEGRAM_API_BASE = "https://api.telegram.org";
+﻿import { translations } from './i18n';
+
+const TELEGRAM_API_BASE = "https://api.telegram.org";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -98,6 +100,7 @@ export interface RiskNotificationParams {
   score: number;
   factors: Array<{ name: string; value: number; description: string }>;
   queueId: string;
+  language?: 'en' | 'tr';
 }
 
 export async function notifyTelegramRisk(params: RiskNotificationParams) {
@@ -106,14 +109,15 @@ export async function notifyTelegramRisk(params: RiskNotificationParams) {
     return null;
   }
 
-  const { account, recipient, amount, asset, score, factors, queueId } = params;
+  const { account, recipient, amount, asset, score, factors, queueId, language = 'en' } = params;
+  const t = translations[language].telegram;
   
   // Determine risk level
   let riskLevel: 'low' | 'medium' | 'high' = 'high';
   if (score < 0.2) riskLevel = 'low';
   else if (score < 0.5) riskLevel = 'medium';
 
-  // Try to generate AI message first
+  // Try to generate AI message first (in the selected language)
   let aiMessage: string | null = null;
   try {
     const { generateTelegramAlert } = await import('@/lib/ai');
@@ -125,6 +129,7 @@ export async function notifyTelegramRisk(params: RiskNotificationParams) {
       score,
       factors,
       riskLevel,
+      language,
     });
   } catch (error) {
     // Silently fall back to template
@@ -137,35 +142,35 @@ export async function notifyTelegramRisk(params: RiskNotificationParams) {
     // Add transaction details and queue ID to AI message
     message = `${aiMessage}
 
-📊 *Transaction Details*
-• From: \`${account.slice(0, 8)}...${account.slice(-4)}\`
-• To: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
-• Amount: *${amount} ${asset}*
-• Risk Score: ${score.toFixed(2)}
+📊 *${t.transactionDetails}*
+• ${t.from}: \`${account.slice(0, 8)}...${account.slice(-4)}\`
+• ${t.to}: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
+• ${t.amount}: *${amount} ${asset}*
+• ${t.riskScore}: ${score.toFixed(2)}
 
-Queue ID: \`${queueId}\``;
+${t.queueId}: \`${queueId}\``;
   } else {
     // Fall back to template
     const time = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const factorsList = factors.map(f => `✗ ${f.description}`).join('\n');
-    const riskLevelDisplay = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
+    const riskLevelDisplay = riskLevel === 'high' ? t.high : riskLevel === 'medium' ? t.medium : t.low;
     const emoji = riskLevel === 'high' ? '🚨' : '⚠️';
 
-    message = `${emoji} *Sentinel Security Alert*
+    message = `${emoji} *${t.alertPrefix}*
 
-Transaction detected and being processed:
-• From: \`${account.slice(0, 8)}...\`
-• To: \`${recipient.slice(0, 8)}...\`
-• Amount: *${amount} ${asset}*
-• Time: ${time} UTC
-• Risk: *${riskLevelDisplay}* (score ${score.toFixed(2)})
+${t.transactionDetected}:
+• ${t.from}: \`${account.slice(0, 8)}...\`
+• ${t.to}: \`${recipient.slice(0, 8)}...\`
+• ${t.amount}: *${amount} ${asset}*
+• ${t.time}: ${time} UTC
+• ${t.risk}: *${riskLevelDisplay}* (${t.scoreLabel} ${score.toFixed(2)})
 
-*Risk Factors:*
+*${t.riskFactors}:*
 ${factorsList}
 
-${riskLevel === 'high' ? '🔐 Guardian multisig required' : '✅ TOTP verification required'}
+${riskLevel === 'high' ? `🔐 ${t.guardianRequired}` : `✅ ${t.totpRequired}`}
 
-Queue ID: \`${queueId}\``;
+${t.queueId}: \`${queueId}\``;
   }
 
   // Shorten IDs for Telegram callback_data (64 byte limit)
@@ -173,14 +178,20 @@ Queue ID: \`${queueId}\``;
   const shortAccount = account.slice(0, 8);
   const shortRecipient = recipient.slice(0, 8);
 
+  // Button labels based on language (buttons are informational only)
+  const detailsLabel = language === 'tr' ? 'ℹ️ Detaylar' : 'ℹ️ Details';
+  const probeLabel = language === 'tr' ? '🔍 İncele' : '🔍 Probe';
+  const lockLabel = language === 'tr' ? '🔒 1s Kilitle' : '🔒 Lock 1h';
+  const safeLabel = language === 'tr' ? '✓ Güvenli İşaretle' : '✓ Mark Safe';
+
   const buttons: TelegramButton[][] = [
     [
-      { text: "ℹ️ Details", callback_data: `D:${shortQueueId}` },
-      { text: "🔍 Probe", callback_data: `P:${shortQueueId}` }
+      { text: detailsLabel, callback_data: `D:${shortQueueId}` },
+      { text: probeLabel, callback_data: `P:${shortQueueId}` }
     ],
     [
-      { text: "🔒 Lock 1h", callback_data: `L:${shortAccount}` },
-      { text: "✓ Mark Safe", callback_data: `S:${shortRecipient}` }
+      { text: lockLabel, callback_data: `L:${shortAccount}` },
+      { text: safeLabel, callback_data: `S:${shortRecipient}` }
     ]
   ];
 
@@ -201,27 +212,30 @@ export async function notifyTransactionComplete(params: {
   amount: string;
   asset: string;
   hash: string;
+  language?: 'en' | 'tr';
 }) {
   const chatId = getDefaultChatId();
   if (!chatId) return null;
 
-  const { account, recipient, amount, asset, hash } = params;
+  const { account, recipient, amount, asset, hash, language = 'en' } = params;
+  const t = translations[language].telegram;
 
-  // Try to generate AI confirmation message
+  // Try to generate AI confirmation message (in the selected language)
   let aiMessage: string | null = null;
   try {
-    const { generateTelegramAlert } = await import('@/lib/ai');
-    const prompt = `Generate a short post-transaction confirmation message (2-3 sentences). Transaction: ${amount} ${asset} sent to ${recipient.slice(0, 8)}... Be concise and friendly.`;
-    
-    // Use the AI client directly for this simpler message
     const openaiClient = await import('openai').then(m => m.default);
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
+      const langInstruction = language === 'tr' 
+        ? 'Generate a short post-transaction confirmation message in TURKISH (2-3 sentences).'
+        : 'Generate a short post-transaction confirmation message (2-3 sentences).';
+      const prompt = `${langInstruction} Transaction: ${amount} ${asset} sent to ${recipient.slice(0, 8)}... Be concise and friendly.`;
+      
       const client = new openaiClient({ apiKey });
       const response = await client.chat.completions.create({
         model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are Sentinel. Generate short, friendly transaction confirmation messages.' },
+          { role: 'system', content: language === 'tr' ? 'Sen Sentinel\'sin. Kısa, dostça işlem onay mesajları oluştur (Türkçe).' : 'You are Sentinel. Generate short, friendly transaction confirmation messages.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.3,
@@ -236,25 +250,25 @@ export async function notifyTransactionComplete(params: {
   let message: string;
   
   if (aiMessage) {
-    message = `✅ *Transaction Completed*
+    message = `✅ *${t.transactionCompleted}*
 
 ${aiMessage}
 
-📊 *Details:*
-• From: \`${account.slice(0, 8)}...${account.slice(-4)}\`
-• To: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
-• Amount: *${amount} ${asset}*
-• Hash: \`${hash.slice(0, 12)}...\``;
+📊 *${t.details}:*
+• ${t.from}: \`${account.slice(0, 8)}...${account.slice(-4)}\`
+• ${t.to}: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
+• ${t.amount}: *${amount} ${asset}*
+• ${t.hash}: \`${hash.slice(0, 12)}...\``;
   } else {
     // Fall back to template
-    message = `✅ *Transaction Completed*
+    message = `✅ *${t.transactionCompleted}*
 
-From: \`${account.slice(0, 8)}...\`
-To: \`${recipient.slice(0, 8)}...\`
-Amount: *${amount} ${asset}*
-Hash: \`${hash.slice(0, 12)}...\`
+${t.from}: \`${account.slice(0, 8)}...\`
+${t.to}: \`${recipient.slice(0, 8)}...\`
+${t.amount}: *${amount} ${asset}*
+${t.hash}: \`${hash.slice(0, 12)}...\`
 
-Transaction has been successfully processed.`;
+${t.transactionSuccess}`;
   }
 
   return telegramFetch("sendMessage", {

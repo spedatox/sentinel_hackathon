@@ -9,6 +9,7 @@ interface ExplainRequest {
   factors?: Partial<Features>;
   score?: number;
   reasons?: string[];
+  language?: 'en' | 'tr';
 }
 
 export async function POST(request: Request) {
@@ -22,9 +23,10 @@ export async function POST(request: Request) {
     const reasons = Array.isArray(payload.reasons)
       ? payload.reasons.filter((item): item is string => typeof item === 'string')
       : [];
+    const language = payload.language || 'en';
 
     const fallback = explainFactors(factors, { score, reasons });
-    const ai = await generateAiRiskExplanation(factors, { score, reasons });
+    const ai = await generateAiRiskExplanation(factors, { score, reasons, language });
     const text = ai?.text ?? fallback;
     const source = ai?.source ?? 'rules';
 

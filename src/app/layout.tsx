@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/providers/WalletProvider";
+import { LanguageProvider } from "@/providers/LanguageProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,9 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sentinel Guardian Console",
+  title: "Sentinel | AI-Powered Stellar Wallet Security",
   description:
-    "Monitor your wallet, manage guardians, and enforce secure approvals with Sentinel.",
+    "Next-gen blockchain security with AI risk detection, multi-signature protection, and real-time threat analysis for Stellar.",
+  icons: {
+    icon: '/sentinel_logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +33,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletProvider>{children}</WalletProvider>
+        <LanguageProvider>
+          <WalletProvider>{children}</WalletProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

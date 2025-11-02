@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import RiskBadge from "./RiskBadge";
 import StepUpModal from "./StepUpModal";
-import TelegramStatus from "./TelegramStatus";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 interface RiskResponse {
   score: number;
@@ -27,8 +27,6 @@ interface PendingTxContext {
   asset: string;
   ts: string;
 }
-
-type TelegramState = "idle" | "waiting" | "approved" | "error";
 
 interface PaymentFormProps {
   publicKey: string;
@@ -48,8 +46,8 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
   const [riskExplanation, setRiskExplanation] = useState<string | null>(null);
   const [stepUpOpen, setStepUpOpen] = useState(false);
   const [pendingTx, setPendingTx] = useState<PendingTxContext | null>(null);
-  const [telegramStatus, setTelegramStatus] = useState<TelegramState>("idle");
   const [guardianTxId, setGuardianTxId] = useState<string | null>(null);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -66,19 +64,19 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
     const newErrors: { recipient?: string; amount?: string } = {};
 
     if (!recipient.trim()) {
-      newErrors.recipient = "Recipient address is required";
+      newErrors.recipient = t.payment.errors.recipientRequired;
     } else if (recipient.length !== 56 || !recipient.startsWith("G")) {
-      newErrors.recipient = "Invalid Stellar address (must start with G and be 56 characters).";
+      newErrors.recipient = t.payment.errors.recipientInvalid;
     }
 
     if (!amount.trim()) {
-      newErrors.amount = "Amount is required";
+      newErrors.amount = t.payment.errors.amountRequired;
     } else {
       const numAmount = Number.parseFloat(amount);
       if (Number.isNaN(numAmount) || numAmount <= 0) {
-        newErrors.amount = "Amount must be a positive number.";
+        newErrors.amount = t.payment.errors.amountInvalid;
       } else if (numAmount < 0.0000001) {
-        newErrors.amount = "Amount is too small (minimum 0.0000001 XLM).";
+        newErrors.amount = t.payment.errors.amountTooSmall;
       }
     }
 
@@ -97,7 +95,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
     try {
       setLoading(true);
       if (!stellar) {
-        throw new Error("Wallet helper not ready");
+        throw new Error(t.payment.errors.walletNotReady);
       }
 
       const result = await stellar.sendPayment({
@@ -123,6 +121,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
               tx_hash: result.hash,
               risk_score: riskResult?.score || 0,
               risk_level: "low",
+              language: language,
             }),
           });
         } catch (notifyError) {
@@ -137,7 +136,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         setRiskResult(null);
         setRiskExplanation(null);
         setPendingTx(null);
-        setTelegramStatus("idle");
         setGuardianTxId(null);
         if (onSuccess) {
           onSuccess();
@@ -165,7 +163,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         throw new Error("Wallet helper not ready");
       }
       setLoading(true);
-      setTelegramStatus("waiting");
       const response = await fetch("/api/guardian/prepare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,6 +178,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
           factors: riskResult?.factors,
           score: riskResult?.score,
           reasons: riskResult?.reasons,
+          language: language,
         }),
       });
 
@@ -212,7 +210,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       }
 
       const approveData = await approveResponse.json();
-      setTelegramStatus("approved");
       
       // If transaction needs user signature, sign it in wallet and submit
       if (approveData.needs_user_signature && approveData.xdr_to_sign) {
@@ -251,7 +248,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       console.error("Guardian prepare error:", error);
       const message =
         error instanceof Error ? error.message : "Guardian approval failed to start.";
-      setTelegramStatus("error");
       setAlert({
         type: "error",
         message,
@@ -295,7 +291,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         throw new Error(details.error || "Guardian approval failed");
       }
 
-      setTelegramStatus("approved");
       setAlert({
         type: "success",
         message: "Guardian approval recorded. Sending now.",
@@ -305,7 +300,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       console.error("Guardian approve error:", error);
       const message =
         error instanceof Error ? error.message : "Guardian approval failed.";
-      setTelegramStatus("error");
       setAlert({
         type: "error",
         message,
@@ -327,7 +321,6 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       setAlert(null);
       setTxHash("");
       setGuardianTxId(null);
-      setTelegramStatus("idle");
 
       const amountValue = Number.parseFloat(amount);
       const txContext: PendingTxContext = {
@@ -380,6 +373,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
           factors: riskPayload.factors,
           score: riskPayload.score,
           reasons: riskPayload.reasons,
+          language: language,
         }),
       });
       if (explainResponse.ok) {
@@ -390,13 +384,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       if (riskPayload.bucket === "low") {
         await executeSend(txContext);
       } else {
-        setAlert({
-          type: "error",
-          message:
-            riskPayload.bucket === "medium"
-              ? "Medium risk detected. Complete step-up verification."
-              : "High risk detected. Guardian approval required.",
-        });
+        // Open step-up modal for medium/high risk
         setStepUpOpen(true);
       }
     } catch (error: unknown) {
@@ -432,26 +420,26 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
   }
 
   return (
-    <Card className="space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300">
+    <Card className="space-y-4">
+      <header className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-lg text-cyan-300">
           <FaPaperPlane />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold text-white">Send payment</h2>
-          <p className="text-sm text-white/60">Sentinel analyses every transfer before it leaves.</p>
+          <h2 className="text-xl font-semibold text-white">{t.payment.title}</h2>
+          <p className="text-xs text-white/60">{t.payment.subtitle}</p>
         </div>
       </header>
 
       {riskResult && (
-        <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <RiskBadge bucket={riskResult.bucket} />
-            <p className="text-xs text-white/50">
-              Score {riskResult.score.toFixed(2)} | history {riskResult.historySampleSize}
+            <p className="text-[10px] text-white/50">
+              {t.risk.score} {riskResult.score.toFixed(2)} | {t.risk.history} {riskResult.historySampleSize}
             </p>
           </div>
-          {riskExplanation && <p className="text-sm text-white/70">{riskExplanation}</p>}
+          {riskExplanation && <p className="text-xs text-white/70">{riskExplanation}</p>}
         </div>
       )}
 
@@ -460,29 +448,29 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
       )}
 
       {txHash && (
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
-          <div className="flex items-start gap-3 text-sm text-white/80">
-            <FaCheckCircle className="mt-1 text-lg text-emerald-300" />
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
+          <div className="flex items-start gap-2 text-sm text-white/80">
+            <FaCheckCircle className="mt-1 text-base text-emerald-300" />
             <div>
-              <p className="font-semibold text-emerald-200">Transaction confirmed</p>
-              <p className="mt-2 text-xs text-white/60">Hash</p>
-              <p className="mt-1 break-all font-mono text-xs text-white/90">{txHash}</p>
+              <p className="text-sm font-semibold text-emerald-200">{t.payment.confirmed}</p>
+              <p className="mt-1 text-[10px] text-white/60">{t.payment.hash}</p>
+              <p className="mt-0.5 break-all font-mono text-[10px] text-white/90">{txHash}</p>
               <a
                 href={stellar.getExplorerLink(txHash, "tx")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center text-xs text-cyan-300 underline"
+                className="mt-1 inline-flex items-center text-[10px] text-cyan-300 underline"
               >
-                View on Stellar Expert
+                {t.wallet.viewExplorer}
               </a>
             </div>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <Input
-          label="Recipient address"
+          label={t.payment.recipient}
           placeholder="GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
           value={recipient}
           onChange={(event) => setRecipient(event.target.value)}
@@ -490,7 +478,7 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         />
 
         <Input
-          label="Amount (XLM)"
+          label={t.payment.amount}
           type="number"
           min="0"
           step="any"
@@ -501,44 +489,19 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         />
 
         <Input
-          label="Memo (optional)"
-          placeholder="Payment for..."
+          label={t.payment.memo}
+          placeholder={t.payment.memoPlaceholder}
           value={memo}
           onChange={(event) => setMemo(event.target.value)}
         />
 
         <Button type="submit" disabled={loading} fullWidth leftIcon={!loading ? <FaPaperPlane /> : undefined}>
-          {loading ? "Processing..." : "Send payment"}
+          {loading ? t.payment.processing : t.payment.sendButton}
         </Button>
       </form>
 
-      {riskResult?.bucket === "high" && (
-        <div className="space-y-3">
-          <TelegramStatus
-            status={telegramStatus}
-            txId={guardianTxId || undefined}
-            message={
-              telegramStatus === "waiting"
-                ? "Check Telegram alert and approve to continue."
-                : undefined
-            }
-          />
-          {guardianTxId && (
-            <Button
-              onClick={simulateGuardianApprove}
-              variant="secondary"
-              disabled={loading}
-              fullWidth
-            >
-              Simulate Telegram Approve
-            </Button>
-          )}
-        </div>
-      )}
-
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/70">
-        Always double-check the recipient address before sending. Transactions on-chain are
-        irreversible.
+      <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] text-white/70">
+        {t.payment.warning}
       </div>
 
       {riskResult && pendingTx && (

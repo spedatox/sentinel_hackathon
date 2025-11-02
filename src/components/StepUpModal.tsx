@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { RiskBucket } from "./RiskBadge";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 interface StepUpModalProps {
   open: boolean;
@@ -11,8 +12,6 @@ interface StepUpModalProps {
   onVerify: () => Promise<void> | void;
   onCancel: () => void;
 }
-
-const STEP_UP_CODE = "123123";
 
 export default function StepUpModal({
   open,
@@ -26,10 +25,11 @@ export default function StepUpModal({
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
+  const { t } = useLanguage();
 
   const headline = useMemo(
-    () => (riskBucket === "high" ? "Guardian approval required" : "Step-up verification required"),
-    [riskBucket],
+    () => (riskBucket === "high" ? t.stepUp.highTitle : t.stepUp.mediumTitle),
+    [riskBucket, t],
   );
 
   useEffect(() => {
@@ -76,17 +76,15 @@ export default function StepUpModal({
         const data = await response.json();
         
         if (!response.ok || !data.valid) {
-          setError(data.message || "Invalid TOTP code from Google Authenticator");
+          setError(data.message || t.stepUp.invalidTotp);
           setVerifying(false);
           return;
         }
       } else {
-        // Fall back to demo code
-        if (code.trim() !== STEP_UP_CODE) {
-          setError("Invalid code. Use 123123 for the demo or enable Google Authenticator.");
-          setVerifying(false);
-          return;
-        }
+        // TOTP must be enabled for verification
+        setError(t.stepUp.totpRequired);
+        setVerifying(false);
+        return;
       }
       
       await onVerify();
@@ -101,25 +99,18 @@ export default function StepUpModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
       <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900/95 p-8 shadow-2xl">
         <h3 className="text-lg font-semibold uppercase tracking-wide text-slate-300">
-          Risk score {(score * 100).toFixed(0)}%
+          {t.risk.score} {(score * 100).toFixed(0)}%
         </h3>
         <h2 className="mt-1 text-2xl font-bold text-white">{headline}</h2>
         <p className="mt-3 text-sm text-slate-400">
-          We detected unusual behavior and locked the send flow. Complete the step-up challenge to continue.
-          {totpEnabled ? (
-            <span className="block mt-2 text-cyan-300">
-              🔐 Enter code from Google Authenticator
-            </span>
-          ) : (
-            <span className="block mt-2">
-              Use code <span className="font-mono text-slate-200">123123</span> for demo, or enable Google Authenticator in settings.
-            </span>
-          )}
+          {riskBucket === "high" 
+            ? t.stepUp.highInfo 
+            : t.stepUp.totpInfo}
         </p>
 
         <div className="mt-6 space-y-2">
           <label htmlFor="step-up-code" className="text-sm font-medium text-slate-200">
-            One-time code
+            {t.stepUp.enterCode}
           </label>
           <input
             id="step-up-code"
@@ -129,6 +120,11 @@ export default function StepUpModal({
             className="w-full rounded-lg border border-white/20 bg-slate-950/60 px-4 py-3 font-mono text-lg tracking-[0.3em] text-white focus:border-cyan-400 focus:outline-none"
             placeholder="......"
           />
+          {!totpEnabled && (
+            <p className="text-xs text-rose-400">
+              {t.stepUp.totpRequired}
+            </p>
+          )}
         </div>
 
         {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
@@ -145,7 +141,7 @@ export default function StepUpModal({
               .filter(Boolean)
               .join(" ")}
           >
-            {verifying ? "Verifying..." : "Verify & Continue"}
+            {verifying ? t.stepUp.verifying : t.stepUp.verify}
           </button>
 
           <button
@@ -153,7 +149,7 @@ export default function StepUpModal({
             onClick={onCancel}
             className="flex-1 rounded-lg border border-white/15 px-6 py-3 font-semibold text-slate-200 transition-all hover:bg-white/5"
           >
-            Cancel
+            {t.stepUp.cancel}
           </button>
         </div>
       </div>

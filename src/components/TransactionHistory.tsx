@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import RiskBadge, { type RiskBucket } from "./RiskBadge";
 import InsightsDrawer from "./InsightsDrawer";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 interface Transaction {
   id: string;
@@ -82,6 +83,7 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -164,9 +166,9 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-2xl">
         *
       </div>
-      <p className="text-sm font-semibold text-white">No transactions yet</p>
+      <p className="text-sm font-semibold text-white">{t.history.noTransactions}</p>
       <p className="mt-1 text-xs text-white/50">
-        Once this wallet sends or receives payments, Sentinel will display them here with risk tags.
+        {t.history.noTransactionsDesc}
       </p>
     </div>
   );
@@ -191,6 +193,7 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
         body: JSON.stringify({
           factors: risk.factors,
           score: risk.score,
+          language: language,
         }),
       });
       if (!response.ok) {
@@ -215,14 +218,14 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
   const selectedTx = selectedTxId ? transactions.find((tx) => tx.id === selectedTxId) : null;
 
   const Header = () => (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-300">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-300">
           <FaHistory />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold text-white">Transaction history</h2>
-          <p className="text-sm text-white/60">Sentinel re-scores each outgoing payment in context.</p>
+          <h2 className="text-xl font-semibold text-white">{t.history.title}</h2>
+          <p className="text-xs text-white/60">{t.history.subtitle}</p>
         </div>
       </div>
       <Button
@@ -231,7 +234,7 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
         variant="secondary"
         leftIcon={<FaSync className={refreshing ? "animate-spin" : ""} />}
       >
-        Refresh
+        {refreshing ? t.balance.refreshing : t.balance.refresh}
       </Button>
     </div>
   );
@@ -257,7 +260,7 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
         {transactions.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {transactions.map((tx) => {
               const outgoing = isOutgoing(tx);
               const risk = riskByTx[tx.id];
@@ -265,13 +268,13 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
               return (
                 <div
                   key={tx.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-white/20 hover:bg-white/10"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-3 transition-all hover:border-white/20 hover:bg-white/10"
                 >
-                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
                       <div
                         className={[
-                          "flex h-11 w-11 items-center justify-center rounded-full text-lg",
+                          "flex h-9 w-9 items-center justify-center rounded-full text-sm",
                           outgoing
                             ? "bg-rose-500/20 text-rose-300"
                             : "bg-emerald-500/20 text-emerald-300",
@@ -282,11 +285,11 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
                         {outgoing ? <FaArrowUp /> : <FaArrowDown />}
                       </div>
                       <div>
-                        <p className="font-semibold text-white">{outgoing ? "Sent" : "Received"}</p>
+                        <p className="text-sm font-semibold text-white">{outgoing ? t.history.sent : t.history.received}</p>
                         {tx.amount && (
                           <p
                             className={[
-                              "text-lg font-bold",
+                              "text-base font-bold",
                               outgoing ? "text-rose-300" : "text-emerald-300",
                             ]
                               .filter(Boolean)
@@ -319,7 +322,7 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
                           .filter(Boolean)
                           .join(" ")}
                       >
-                        Explain
+                        {t.history.explain}
                       </button>
                       <a
                         href={stellar ? stellar.getExplorerLink(tx.hash, "tx") : "#"}
@@ -327,23 +330,23 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-sm text-cyan-300 transition-colors hover:text-cyan-200"
                       >
-                        Details <FaExternalLinkAlt className="text-xs" />
+                        {t.history.details} <FaExternalLinkAlt className="text-xs" />
                       </a>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm text-white/70">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-white/70">
                     <div>
-                      <p className="mb-1 text-xs text-white/40">From</p>
+                      <p className="mb-0.5 text-[10px] text-white/40 uppercase tracking-wider">{t.history.from}</p>
                       <p className="font-mono">{formatAddress(tx.from)}</p>
                     </div>
                     <div>
-                      <p className="mb-1 text-xs text-white/40">To</p>
+                      <p className="mb-0.5 text-[10px] text-white/40 uppercase tracking-wider">{t.history.to}</p>
                       <p className="font-mono">{formatAddress(tx.to)}</p>
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs text-white/50">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-[10px] text-white/50">
                     <p>{formatDate(tx.createdAt)}</p>
                     <p className="font-mono">{tx.hash.slice(0, 12)}...</p>
                   </div>

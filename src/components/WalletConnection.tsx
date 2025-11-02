@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaCheck, FaCopy, FaWallet } from "react-icons/fa";
+import { FaCheck, FaCopy, FaWallet, FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdLogout, MdSwapHoriz } from "react-icons/md";
 import { type StellarHelper, getStellarHelper } from "@/lib/stellar-helper";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/providers/WalletProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 export default function WalletConnection() {
   const [stellar, setStellar] = useState<StellarHelper | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showFullAddress, setShowFullAddress] = useState(false);
   const { publicKey, setPublicKey } = useWallet();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -91,8 +94,8 @@ export default function WalletConnection() {
               <FaWallet />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-white">Connect wallet</h2>
-              <p className="text-sm text-white/60">Loading wallet tools...</p>
+              <h2 className="text-2xl font-semibold text-white">{t.wallet.title}</h2>
+              <p className="text-sm text-white/60">{t.wallet.loading}</p>
             </div>
           </div>
         </div>
@@ -109,10 +112,9 @@ export default function WalletConnection() {
               <FaWallet />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-white">Connect wallet</h2>
+              <h2 className="text-2xl font-semibold text-white">{t.wallet.title}</h2>
               <p className="text-sm text-white/60">
-                Use Freighter or any WalletConnect-compatible wallet on Stellar
-                Testnet.
+                {t.wallet.description}
               </p>
             </div>
           </div>
@@ -123,11 +125,11 @@ export default function WalletConnection() {
             fullWidth
             leftIcon={<FaWallet />}
           >
-            {connecting ? "Opening wallet..." : "Connect wallet"}
+            {connecting ? t.wallet.connecting : t.wallet.connectButton}
           </Button>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-            Need funds? Visit{" "}
+            {t.wallet.fundingNote}{" "}
             <a
               href="https://laboratory.stellar.org/#account-creator?network=test"
               target="_blank"
@@ -136,7 +138,7 @@ export default function WalletConnection() {
             >
               Stellar Laboratory
             </a>{" "}
-            after connecting to fund your Testnet account.
+            {t.wallet.fundingNote2}
           </div>
         </div>
       </Card>
@@ -144,6 +146,10 @@ export default function WalletConnection() {
   }
 
   const address = publicKey ?? "";
+  
+  const concealedAddress = address
+    ? `${address.slice(0, 4)}${"•".repeat(40)}${address.slice(-4)}`
+    : "";
 
   return (
     <Card>
@@ -151,7 +157,7 @@ export default function WalletConnection() {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 text-sm text-emerald-300">
             <span className="h-3 w-3 rounded-full bg-emerald-300" />
-            Connected
+            {t.wallet.connected}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -160,24 +166,42 @@ export default function WalletConnection() {
               disabled={connecting}
               className="flex items-center gap-2 text-sm text-cyan-300 transition hover:text-cyan-200 disabled:opacity-50"
             >
-              <MdSwapHoriz /> Change
+              <MdSwapHoriz /> {t.wallet.change}
             </button>
             <button
               type="button"
               onClick={handleDisconnect}
               className="flex items-center gap-2 text-sm text-rose-300 transition hover:text-rose-200"
             >
-              <MdLogout /> Disconnect
+              <MdLogout /> {t.wallet.disconnect}
             </button>
           </div>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-white/40">
-            Public key
-          </p>
-          <p className="mt-2 break-all font-mono text-sm text-white/90">
-            {address}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs uppercase tracking-wide text-white/40">
+              {t.wallet.publicKey}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowFullAddress(!showFullAddress)}
+              className="flex items-center gap-1 text-xs text-cyan-300 transition hover:text-cyan-200"
+              aria-label={showFullAddress ? t.wallet.hide : t.wallet.show}
+            >
+              {showFullAddress ? (
+                <>
+                  <FaEyeSlash className="text-sm" /> {t.wallet.hide}
+                </>
+              ) : (
+                <>
+                  <FaEye className="text-sm" /> {t.wallet.show}
+                </>
+              )}
+            </button>
+          </div>
+          <p className="break-all font-mono text-sm text-white/90">
+            {showFullAddress ? address : concealedAddress}
           </p>
         </div>
 
@@ -187,7 +211,7 @@ export default function WalletConnection() {
             variant="secondary"
             leftIcon={copied ? <FaCheck /> : <FaCopy />}
           >
-            {copied ? "Copied" : "Copy address"}
+            {copied ? t.wallet.copied : t.wallet.copyAddress}
           </Button>
           <a
             href={stellar.getExplorerLink(address, "account")}
@@ -195,7 +219,7 @@ export default function WalletConnection() {
             rel="noopener noreferrer"
             className="text-xs text-cyan-300 underline transition hover:text-cyan-200"
           >
-            View on Stellar Expert
+            {t.wallet.viewExplorer}
           </a>
         </div>
       </div>

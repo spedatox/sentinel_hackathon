@@ -9,6 +9,7 @@ interface NotifyRequest {
   tx_hash?: string;
   risk_score: number;
   risk_level: 'low' | 'medium' | 'high';
+  language?: 'en' | 'tr';
 }
 
 export async function POST(request: Request) {
@@ -24,24 +25,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, message: 'No chat ID configured' });
     }
 
-    const { account, recipient, amount, asset, tx_hash, risk_score, risk_level } = payload;
+    const { account, recipient, amount, asset, tx_hash, risk_score, risk_level, language = 'en' } = payload;
+    
+    // Import translations
+    const { translations } = await import('@/lib/i18n');
+    const t = translations[language].telegram;
 
     let message: string;
     
     if (risk_level === 'low') {
-      message = `✅ *Transaction Completed*
+      const statusSent = language === 'tr' ? 'Doğrudan Stellar ağına gönderildi' : 'Sent directly to Stellar network';
+      const securityNote = language === 'tr' ? 'Ek doğrulama gerektirmiyor' : 'No additional verification required';
+      const successNote = language === 'tr' ? 'Düşük riskli bir işlem cüzdanınızdan başarıyla gönderildi.' : 'A low-risk transaction has been successfully sent from your wallet.';
+      
+      message = `✅ *${t.transactionCompleted}*
 
-A low-risk transaction has been successfully sent from your wallet.
+${successNote}
 
-📊 *Transaction Details*
-• From: \`${account.slice(0, 8)}...${account.slice(-4)}\`
-• To: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
-• Amount: *${amount} ${asset}*
-• Risk Score: ${risk_score.toFixed(2)} (Low)
-${tx_hash ? `• Hash: \`${tx_hash.slice(0, 16)}...\`` : ''}
+📊 *${t.transactionDetails}*
+• ${t.from}: \`${account.slice(0, 8)}...${account.slice(-4)}\`
+• ${t.to}: \`${recipient.slice(0, 8)}...${recipient.slice(-4)}\`
+• ${t.amount}: *${amount} ${asset}*
+• ${t.riskScore}: ${risk_score.toFixed(2)} (${t.low})
+${tx_hash ? `• ${t.hash}: \`${tx_hash.slice(0, 16)}...\`` : ''}
 
-✨ *Status:* Sent directly to Stellar network
-🔒 *Security:* No additional verification required`;
+✨ *${language === 'tr' ? 'Durum' : 'Status'}:* ${statusSent}
+🔒 *${language === 'tr' ? 'Güvenlik' : 'Security'}:* ${securityNote}`;
     } else {
       // Medium/high handled by notifyTelegramRisk
       return NextResponse.json({ ok: true });
