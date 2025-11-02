@@ -420,16 +420,21 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
   }
 
   return (
-    <Card className="space-y-4">
-      <header className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-lg text-cyan-300">
-          <FaPaperPlane />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-white">{t.payment.title}</h2>
-          <p className="text-xs text-white/60">{t.payment.subtitle}</p>
-        </div>
-      </header>
+    <Card className="space-y-4 relative overflow-hidden">
+      {/* Gradient background */}
+      <div className="absolute top-0 left-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      <div className="relative z-10">
+        <header className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-lg text-cyan-300 shadow-lg shadow-cyan-500/20">
+            <FaPaperPlane />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">{t.payment.title}</h2>
+            <p className="text-xs text-white/60">{t.payment.subtitle}</p>
+          </div>
+        </header>
 
       {riskResult && (
         <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
@@ -504,19 +509,20 @@ export default function PaymentForm({ publicKey, onSuccess }: PaymentFormProps) 
         {t.payment.warning}
       </div>
 
-      {riskResult && pendingTx && (
-        <StepUpModal
-          open={stepUpOpen}
-          riskBucket={riskResult.bucket}
-          score={riskResult.score}
-          publicKey={publicKey}
-          onVerify={handleStepUpVerify}
-          onCancel={() => {
-            setStepUpOpen(false);
-            setPendingTx(null);
-          }}
-        />
-      )}
+        {riskResult && pendingTx && (
+          <StepUpModal
+            open={stepUpOpen}
+            riskBucket={riskResult.bucket}
+            score={riskResult.score}
+            publicKey={publicKey}
+            onVerify={handleStepUpVerify}
+            onCancel={() => {
+              setStepUpOpen(false);
+              setPendingTx(null);
+            }}
+          />
+        )}
+      </div>
     </Card>
   );
 }

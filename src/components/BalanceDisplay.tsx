@@ -86,17 +86,22 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
   }
 
   return (
-    <Card>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-300">
-            <FaCoins />
+    <Card className="relative overflow-hidden">
+      {/* Gradient background */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl"></div>
+      
+      <div className="relative z-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 text-amber-300 shadow-lg shadow-amber-500/20">
+              <FaCoins />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">{t.balance.title}</h2>
+              <p className="text-sm text-white/60">{t.balance.subtitle}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-white">{t.balance.title}</h2>
-            <p className="text-sm text-white/60">{t.balance.subtitle}</p>
-          </div>
-        </div>
         <Button
           onClick={fetchBalance}
           disabled={refreshing}
@@ -138,9 +143,10 @@ export default function BalanceDisplay({ publicKey }: BalanceDisplayProps) {
         </div>
       )}
 
-      <p className="mt-6 text-xs text-white/50">
-        {t.balance.tip}
-      </p>
+        <p className="mt-6 text-xs text-white/50">
+          {t.balance.tip}
+        </p>
+      </div>
     </Card>
   );
 }

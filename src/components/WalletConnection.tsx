@@ -105,14 +105,18 @@ export default function WalletConnection() {
 
   if (!isConnected) {
     return (
-      <Card>
-        <div className="space-y-5">
+      <Card className="relative overflow-hidden">
+        {/* Gradient background */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 space-y-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-xl text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-xl text-cyan-300 shadow-lg shadow-cyan-500/20">
               <FaWallet />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-white">{t.wallet.title}</h2>
+              <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">{t.wallet.title}</h2>
               <p className="text-sm text-white/60">
                 {t.wallet.description}
               </p>
@@ -124,17 +128,18 @@ export default function WalletConnection() {
             disabled={connecting}
             fullWidth
             leftIcon={<FaWallet />}
+            className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border-cyan-400/40 hover:from-cyan-500/30 hover:to-purple-500/30"
           >
             {connecting ? t.wallet.connecting : t.wallet.connectButton}
           </Button>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 text-xs text-white/60">
             {t.wallet.fundingNote}{" "}
             <a
               href="https://laboratory.stellar.org/#account-creator?network=test"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-cyan-300 underline"
+              className="text-cyan-300 underline hover:text-cyan-200 transition"
             >
               Stellar Laboratory
             </a>{" "}
@@ -152,11 +157,15 @@ export default function WalletConnection() {
     : "";
 
   return (
-    <Card>
-      <div className="space-y-5">
+    <Card className="relative overflow-hidden">
+      {/* Gradient background for connected state */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      
+      <div className="relative z-10 space-y-5">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 text-sm text-emerald-300">
-            <span className="h-3 w-3 rounded-full bg-emerald-300" />
+            <span className="h-3 w-3 rounded-full bg-emerald-300 shadow-lg shadow-emerald-500/50 animate-pulse" />
             {t.wallet.connected}
           </div>
           <div className="flex items-center gap-2">
@@ -178,7 +187,7 @@ export default function WalletConnection() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs uppercase tracking-wide text-white/40">
               {t.wallet.publicKey}

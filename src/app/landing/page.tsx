@@ -78,17 +78,14 @@ export default function LandingPage() {
             {t.landing.heroDescription}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex items-center justify-center mb-16">
             <Link
               href="/app"
-              className="group w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 rounded-xl font-bold text-lg hover:from-cyan-500 hover:to-indigo-500 transition-all shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-105"
+              className="group flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 rounded-xl font-bold text-lg hover:from-cyan-500 hover:to-indigo-500 transition-all shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-105"
             >
               {t.landing.getStarted}
               <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button className="w-full sm:w-auto px-8 py-4 border-2 border-white/10 rounded-xl font-bold text-lg hover:bg-white/5 transition-all backdrop-blur-sm">
-              {t.landing.watchDemo}
-            </button>
           </div>
 
           {/* Stats */}

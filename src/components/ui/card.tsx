@@ -12,7 +12,7 @@ export function Card({ title, children, className }: CardProps) {
   return (
     <section
       className={[
-        "rounded-3xl border border-white/10 bg-slate-950/60 p-6 backdrop-blur",
+        "rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-sm p-6 hover:scale-[1.01] transition-all duration-300",
         className,
       ]
         .filter(Boolean)

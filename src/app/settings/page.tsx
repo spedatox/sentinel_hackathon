@@ -1,34 +1,34 @@
 "use client";
 
-import AppShell from "@/components/AppShell";
-import TotpSetup from "@/components/TotpSetup";
-import WalletConnection from "@/components/WalletConnection";
+'use client';
+
+import AppShell from '@/components/AppShell';
+import TotpSetup from '@/components/TotpSetup';
+import WalletConnection from '@/components/WalletConnection';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
+
   return (
     <AppShell
-      pageTitle="Settings"
-      pageDescription="Configure guardian approvals, authentication, and integrations."
+      pageTitle={t.settings.title}
+      pageDescription={t.settings.description}
     >
       <div className="space-y-8">
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Account</h2>
-            <p className="text-sm text-white/60">
-              Manage the wallet connected to this Sentinel workspace.
-            </p>
-          </div>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-2">{t.settings.accountTitle}</h2>
+          <p className="text-gray-400 text-sm mb-4">
+            {t.settings.accountDesc}
+          </p>
           <WalletConnection />
         </section>
 
-        <section className="space-y-4 max-w-3xl">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Security &amp; Step-up Auth</h2>
-            <p className="text-sm text-white/60">
-              Require Google Authenticator codes for medium and high-risk transactions to keep your
-              flows safe.
-            </p>
-          </div>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-2">{t.settings.securityTitle}</h2>
+          <p className="text-gray-400 text-sm mb-4">
+            {t.settings.securityDesc}
+          </p>
           <TotpSetup />
         </section>
       </div>

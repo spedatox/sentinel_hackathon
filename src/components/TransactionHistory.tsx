@@ -220,11 +220,11 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
   const Header = () => (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-300">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-300 shadow-lg shadow-purple-500/20">
           <FaHistory />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-white">{t.history.title}</h2>
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">{t.history.title}</h2>
           <p className="text-xs text-white/60">{t.history.subtitle}</p>
         </div>
       </div>
@@ -254,22 +254,27 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
 
   return (
     <>
-      <Card>
-        <Header />
+      <Card className="relative overflow-hidden">
+        {/* Subtle gradient background */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-pink-500/5 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10">
+          <Header />
 
-        {transactions.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-            {transactions.map((tx) => {
-              const outgoing = isOutgoing(tx);
-              const risk = riskByTx[tx.id];
+          {transactions.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              {transactions.map((tx) => {
+                const outgoing = isOutgoing(tx);
+                const risk = riskByTx[tx.id];
 
-              return (
-                <div
-                  key={tx.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-3 transition-all hover:border-white/20 hover:bg-white/10"
-                >
+                return (
+                  <div
+                    key={tx.id}
+                    className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 transition-all hover:border-white/20 hover:bg-white/10 hover:shadow-lg hover:shadow-purple-500/10"
+                  >
                   <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div
@@ -356,13 +361,14 @@ export default function TransactionHistory({ publicKey }: TransactionHistoryProp
           </div>
         )}
 
-        {transactions.length > 0 && (
-          <div className="mt-4 text-center">
-            <p className="text-sm text-white/50">
-              Showing last {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        )}
+          {transactions.length > 0 && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-white/50">
+                Showing last {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          )}
+        </div>
       </Card>
 
       {selectedTx && selectedRisk && (

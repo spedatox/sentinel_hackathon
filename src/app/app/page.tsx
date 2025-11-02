@@ -7,6 +7,7 @@ import PaymentForm from "@/components/PaymentForm";
 import TransactionHistory from "@/components/TransactionHistory";
 import { useWallet } from "@/providers/WalletProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
+import { FiShield, FiActivity, FiZap, FiCheckCircle } from "react-icons/fi";
 
 export default function AppPage() {
   const { publicKey } = useWallet();
@@ -17,23 +18,30 @@ export default function AppPage() {
       pageTitle={t.page.title}
       pageDescription={t.page.description}
     >
-      {/* Hero Section - Compact */}
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-4 lg:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
-          Sentinel
-        </p>
-        <div className="mt-2 space-y-2">
-          <h2 className="text-2xl font-semibold leading-tight md:text-3xl">
+      {/* Hero Section with Gradient Background */}
+      <section className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-indigo-500/5 backdrop-blur-sm p-8 lg:p-10 hover:scale-[1.01] transition-all duration-300">
+        {/* Animated Background Orbs */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-4">
+            <FiShield className="text-cyan-400 text-2xl" />
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
+              Sentinel Dashboard
+            </p>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-cyan-200 to-indigo-200 bg-clip-text text-transparent mb-3">
             {t.hero.title}
           </h2>
-          <p className="max-w-2xl text-xs text-white/70 md:text-sm">
+          <p className="max-w-2xl text-sm text-white/70 leading-relaxed">
             {t.hero.description}
           </p>
         </div>
       </section>
 
       {/* Main Layout - Two Column with Sticky Sidebar */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left: Main Content */}
         <div className="space-y-6">
           {publicKey ? (
@@ -42,8 +50,14 @@ export default function AppPage() {
               <TransactionHistory publicKey={publicKey} />
             </>
           ) : (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-white/60">
-              {t.connect.message}
+            <div className="relative overflow-hidden rounded-2xl border border-dashed border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-indigo-500/5 backdrop-blur-sm p-16 text-center hover:scale-[1.01] transition-all duration-300">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
+              <div className="relative z-10">
+                <FiShield className="mx-auto text-6xl text-cyan-400/50 mb-4" />
+                <p className="text-white/70 text-lg max-w-md mx-auto leading-relaxed">
+                  {t.connect.message}
+                </p>
+              </div>
             </div>
           )}
         </div>

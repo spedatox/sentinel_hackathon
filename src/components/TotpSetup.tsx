@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FaKey, FaQrcode, FaCheckCircle } from "react-icons/fa";
 import { Card } from "./ui/card";
 import { useWallet } from "@/providers/WalletProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 interface TotpSetupProps {
   publicKey?: string;
@@ -11,6 +12,7 @@ interface TotpSetupProps {
 
 export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) {
   const { publicKey: contextPublicKey } = useWallet();
+  const { t } = useLanguage();
   const publicKey = propPublicKey ?? contextPublicKey ?? null;
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
 
   const handleSetup = async () => {
     if (!publicKey) {
-      setError('Connect a wallet to enable Google Authenticator.');
+      setError(t.totp.errorConnectWallet);
       return;
     }
 
@@ -54,14 +56,14 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       });
 
       if (!response.ok) {
-        throw new Error('Setup failed');
+        throw new Error(t.totp.errorSetupFailed);
       }
 
       const data = await response.json();
       setQrUri(data.qrUri);
       setSecret(data.secret);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Setup failed');
+      setError(err instanceof Error ? err.message : t.totp.errorSetupFailed);
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
 
   const handleVerify = async () => {
     if (!publicKey) {
-      setError('Connect a wallet before verifying codes.');
+      setError(t.totp.errorConnectBeforeVerify);
       return;
     }
 
@@ -85,13 +87,13 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       const data = await response.json();
 
       if (!response.ok || !data.valid) {
-        throw new Error(data.message || 'Invalid code');
+        throw new Error(data.message || t.totp.errorInvalidCode);
       }
 
       setSetupComplete(true);
       setEnabled(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : t.totp.errorVerificationFailed);
     } finally {
       setLoading(false);
     }
@@ -117,10 +119,10 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       <Card className="space-y-4">
         <div className="flex items-center gap-3">
           <FaKey className="text-2xl text-cyan-400" />
-          <h2 className="text-xl font-semibold text-white">Google Authenticator</h2>
+          <h2 className="text-xl font-semibold text-white">{t.totp.title}</h2>
         </div>
         <p className="text-sm text-slate-400">
-          Connect a wallet to configure Google Authenticator approvals for medium and high-risk transactions.
+          {t.totp.connectRequired}
         </p>
       </Card>
     );
@@ -131,9 +133,9 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       <Card className="space-y-4">
         <div className="flex items-center gap-3">
           <FaKey className="text-2xl text-cyan-400" />
-          <h2 className="text-xl font-semibold text-white">Google Authenticator</h2>
+          <h2 className="text-xl font-semibold text-white">{t.totp.title}</h2>
         </div>
-        <p className="text-sm text-slate-400">Loading...</p>
+        <p className="text-sm text-slate-400">{t.totp.loading}</p>
       </Card>
     );
   }
@@ -143,10 +145,10 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       <Card className="space-y-4">
         <div className="flex items-center gap-3">
           <FaCheckCircle className="text-2xl text-green-400" />
-          <h2 className="text-xl font-semibold text-white">Google Authenticator Enabled</h2>
+          <h2 className="text-xl font-semibold text-white">{t.totp.enabledTitle}</h2>
         </div>
         <p className="text-sm text-slate-300">
-          This wallet now requires a 6-digit code for medium and high-risk transactions. Contact an administrator if you need to rotate devices.
+          {t.totp.enabledDesc}
         </p>
       </Card>
     );
@@ -157,17 +159,17 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
       <Card className="space-y-4">
         <div className="flex items-center gap-3">
           <FaCheckCircle className="text-2xl text-green-400" />
-          <h2 className="text-xl font-semibold text-white">Setup Complete!</h2>
+          <h2 className="text-xl font-semibold text-white">{t.totp.setupCompleteTitle}</h2>
         </div>
         <p className="text-sm text-slate-300">
-          Google Authenticator is now active. Medium and high-risk transactions will require a code from your app.
+          {t.totp.setupCompleteDesc}
         </p>
         <button
           type="button"
           onClick={() => setSetupComplete(false)}
           className="rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm text-slate-200 hover:bg-white/10"
         >
-          Back to Settings
+          {t.totp.backToSettings}
         </button>
       </Card>
     );
@@ -177,11 +179,11 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
     <Card className="space-y-6">
       <div className="flex items-center gap-3">
         <FaKey className="text-2xl text-cyan-400" />
-        <h2 className="text-xl font-semibold text-white">Enable Google Authenticator</h2>
+        <h2 className="text-xl font-semibold text-white">{t.totp.enableTitle}</h2>
       </div>
 
       <p className="text-sm text-slate-400">
-        Add an extra layer of security to medium and high-risk transactions. Works with Google Authenticator, Authy, Microsoft Authenticator, and other TOTP apps.
+        {t.totp.enableDesc}
       </p>
 
       {!qrUri ? (
@@ -191,14 +193,14 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
           disabled={loading}
           className="w-full rounded-lg border border-cyan-400/60 bg-cyan-500/10 px-6 py-3 font-semibold text-cyan-200 hover:bg-cyan-500/20"
         >
-          {loading ? 'Generating...' : 'Setup Google Authenticator'}
+          {loading ? t.totp.generating : t.totp.setupButton}
         </button>
       ) : (
         <div className="space-y-6">
           <div className="rounded-xl border border-white/10 bg-white/5 p-6">
             <div className="flex items-center gap-3 mb-4">
               <FaQrcode className="text-cyan-400 text-xl" />
-              <h3 className="font-semibold text-white">Step 1: Scan QR Code</h3>
+              <h3 className="font-semibold text-white">{t.totp.step1Title}</h3>
             </div>
             
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -209,13 +211,13 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
             />
             
             <p className="mt-4 text-xs text-slate-400 text-center">
-              Open Google Authenticator and scan this code
+              {t.totp.scanInstruction}
             </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-            <h3 className="font-semibold text-white mb-2">Manual Entry (if QR fails)</h3>
-            <p className="text-xs text-slate-400 mb-2">Secret Key:</p>
+            <h3 className="font-semibold text-white mb-2">{t.totp.manualEntryTitle}</h3>
+            <p className="text-xs text-slate-400 mb-2">{t.totp.secretKey}</p>
             <code className="block rounded bg-slate-950/60 px-3 py-2 text-xs text-cyan-300 font-mono break-all">
               {secret}
             </code>
@@ -224,18 +226,18 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
           <div className="rounded-xl border border-white/10 bg-white/5 p-6">
             <div className="flex items-center gap-3 mb-4">
               <FaCheckCircle className="text-cyan-400 text-xl" />
-              <h3 className="font-semibold text-white">Step 2: Verify Code</h3>
+              <h3 className="font-semibold text-white">{t.totp.step2Title}</h3>
             </div>
             
             <p className="text-sm text-slate-400 mb-4">
-              Enter the 6-digit code from your authenticator app to confirm setup:
+              {t.totp.verifyInstruction}
             </p>
 
             <input
               type="text"
               value={verifyCode}
               onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
+              placeholder={t.totp.codePlaceholder}
               maxLength={6}
               className="w-full rounded-lg border border-white/20 bg-slate-950/60 px-4 py-3 font-mono text-lg tracking-[0.3em] text-white text-center focus:border-cyan-400 focus:outline-none"
             />
@@ -246,7 +248,7 @@ export default function TotpSetup({ publicKey: propPublicKey }: TotpSetupProps) 
               disabled={loading || verifyCode.length !== 6}
               className="mt-4 w-full rounded-lg border border-cyan-400/60 bg-cyan-500/10 px-6 py-3 font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
             >
-              {loading ? 'Verifying...' : 'Complete Setup'}
+              {loading ? t.totp.verifying : t.totp.completeSetup}
             </button>
           </div>
         </div>
