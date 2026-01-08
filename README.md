@@ -1,4 +1,4 @@
-Sentinel
+Sentinel (OSTİM Stellar Hackathon Winner #1
 ========
 
 Sentinel is a behavioural security layer for Stellar Testnet wallets. It studies every outgoing payment, scores risk in real time, explains why, and escalates high risk flows through TOTP step up, guardian approvals, and Telegram notifications without ever touching private keys.
