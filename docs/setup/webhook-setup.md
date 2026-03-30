@@ -58,11 +58,11 @@ https://api.telegram.org/bot<YOUR_BOT_TOKEN>/deleteWebhook
 
 ## Quick ngrok Setup
 
-Your bot token: `YOUR_BOT_TOKEN`
+Your bot token: `<YOUR_BOT_TOKEN>`
 
 After starting ngrok, set webhook with YOUR ngrok URL:
 ```
-YOUR_BOT_TOKEN/setWebhook?url=https://YOUR-NGROK-URL.ngrok.io/api/telegram/webhook
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://YOUR-NGROK-URL.ngrok.io/api/telegram/webhook
 ```
 
 Check webhook status:
