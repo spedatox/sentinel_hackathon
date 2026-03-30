@@ -67,5 +67,5 @@ https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://YOUR-NGROK-U
 
 Check webhook status:
 ```
-https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo
+YOUR_BOT_TOKEN/getWebhookInfo
 ```
